@@ -99,11 +99,12 @@ plt.show()
 id = 0
 imgs_to_process = np.load(output_path+'fullimages_{}.npy'.format(id))
 
-def sample_stack(stack, rows=9, cols=9, start_with=1, show_every=1):
-    fig, ax = plt.subplots(rows,cols,figsize=[8,8])
+def sample_stack(stack, rows=9, cols=9, start_with=0, show_every=1):
+    fig, ax = plt.subplots(rows, cols, figsize=[20,20])
+    plt.subplots_adjust(hspace=0.43)
     for i in range(rows*cols):
         ind = start_with + i*show_every
-        ax[int(i/rows),int(i % rows)].set_title('Срез %d' % ind)
+        ax[int(i/rows),int(i % rows)].set_title('Срез {}'.format(ind), fontsize=7)
         ax[int(i/rows),int(i % rows)].imshow(stack[ind],cmap='gray')
         ax[int(i/rows),int(i % rows)].axis('off')
     plt.show()
@@ -112,12 +113,14 @@ sample_stack(imgs_to_process)
 image3 = imgs_to_process[25]
 #image3[np.logical_and(image3 >= -400, image3 < 300)] = -1000
 #plt.imshow(image3, cmap='gray', interpolation='bilinear')
-#el = scipy.ndimage.grey_erosion(image3, size=(3, 3))
+#
 plt.imshow(image3, cmap='gray', interpolation='bilinear')
 plt.show()
 
-plt.imshow(image3, cmap='gray', interpolation='bilinear')
 
+el = scipy.ndimage.grey_dilation(image3, size=(3, 3))
+plt.imshow(el, cmap='gray', interpolation='bilinear')
+plt.show()
 
 """
 plt.contour(image3, [-1500, -800], colors='brown', linestyles='solid')#air
