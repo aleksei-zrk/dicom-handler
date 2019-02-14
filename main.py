@@ -1,116 +1,131 @@
-from sorting import SortingByID, SortingByName
-from glob import glob
 import os
 import re
+import math
+import json
+
+from glob import glob
 import pydicom
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Button
 import scipy.ndimage
-from tkinter import Tk
+import tkinter as tk
+from tkinter import simpledialog, messagebox
 from tkinter.filedialog import askdirectory
 
+from sorting import SortingByID, SortingByName
+from handler import ScanReader, sample_stack
+from classes import Patient
+import db_template
 
-Tk().withdraw()
+tk.Tk().withdraw()
 data_path = askdirectory()
 
-#data_path = "/home/alex/PyDicom/DICOM"
 output_path = working_path = "/home/alex/Documents/"
 g = glob(data_path + '/*.dcm')
 
-print("Total of %d DICOM images." % len(g))
+popup = messagebox.showinfo('Message', 'Total of {} DICOM images.'.format(len(g)))
+
+answer = messagebox.askyesno('', 'Reallocate and sort DICOM files?')
+
+if answer:
+    root = tk.Tk()
+    v = tk.IntVar()
+
+    def method_choose(choice):
+        global method
+        method = choice
+    tk.Label(root, text='Choose method of sorting:', justify=tk.LEFT, padx=20).pack()
+    tk.Radiobutton(root, text='Name', padx=20, variable=v, value=1, command=method_choose('Name')).pack(anchor=tk.W)
+    tk.Radiobutton(root, text='ID', padx=20, variable=v, value=2, command=method_choose('ID')).pack(anchor=tk.W)
+    tk.Button(root, text='OK', compound=tk.RIGHT, command=root.quit).pack()
+    root.mainloop()
+    root.destroy()
+    print(method)
+
+    if method == 'Name':
+        SortingByName().sort()
+    else:
+        SortingByID().sort()
 
 
-#request_sort = input('Reallocate and sort DICOM files? Yes/No:')
-""""
-if request_sort == 'Yes':
-    request_sort_method = input('Choose method of sorting: \n1. Name \n2. ID\n')
-
-if request_sort_method == 'Name':
-    SortingByName().sort()
-elif request_sort_method == 'ID':
-    SortingByID().sort()
-
-"""
-"""
-subdirs = [re.sub(data_path, '', x[0]) for x in os.walk(data_path)]
-del subdirs[0]
-subdirs.sort()
-print('\n'.join(subdirs))
-"""
-#data_to_proceed = input('Choose patient to work with:')
-
-def load_scan(path):
-    slices = [pydicom.dcmread(path + '/' + s)
-              for s in os.listdir(path)]
-    slices.sort(key=lambda x: int(x.InstanceNumber))
-    try:
-        slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
-    except:
-        slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
-
-    for s in slices:
-        s.SliceThickness = slice_thickness
-
-    return slices
-
-def get_pixels_hu(scans):
-    image = np.stack([s.pixel_array for s in scans])
-    # Convert to int16 (from sometimes int16),
-    # should be possible as values should always be low enough (<32k)
-    image = image.astype(np.int16)
-
-    # Set outside-of-scan pixels to 1
-    # The intercept is usually -1024, so air is approximately 0
-    image[image == -2000] = 0
 
 
-    # Convert to Hounsfield units (HU)
-    intercept = scans[0].RescaleIntercept
-    slope = scans[0].RescaleSlope
-
-    if slope != 1:
-        image = slope * image.astype(np.float64)
-        image = image.astype(np.int16)
-
-    image += np.int16(intercept)
-    #image[np.logical_and(image >= -400, image < 400)] = -1000
-
-    return np.array(image, dtype=np.int16)
-
+reader = ScanReader()
 
 id = 0
-Tk().withdraw()
-data_path1 = askdirectory()
-print(data_path1)
-patient = load_scan(data_path1)
-imgs = get_pixels_hu(patient)
+#tk.Tk().withdraw()
+patient_path = askdirectory()
+print(patient_path)
+
+patient = Patient(patient_path)
+
+patient_params = {'Patient ID': patient.get_id(),
+                  'Patient Name': patient.get_name(),
+                  'Patient Sex': patient.get_sex(),
+                  'Body part examined': patient.get_body_part()}
+
+root = tk.Tk()
+
+def format_dict(d):
+
+    d = json.dumps(d, indent=0, ensure_ascii=False)
+    d = re.sub(r'["}{,]', '', d)
+    return d
+
+root.title('Patient Parameters')
+tk.Label(root, text='Patient parameters are:\n {}'.format(format_dict(patient_params)), font=('Arial', 16)).pack()
+tk.Button(root, text='OK', compound=tk.RIGHT, command=root.quit).pack()
+root.mainloop()
+root.destroy()
+
+if messagebox.askyesno('Database', 'Enter patient to the database?'):
+
+    db_template.set_sql_debug(True)
+    db_template.db.bind(provider='sqlite', filename='patients.sqlite', create_db=True)
+    db_template.db.generate_mapping(create_tables=True)
+    @db_template.db_session
+    def enter_patient(id, name, sex, body_part):
+        if not db_template.Patient_data[id]:
+            db_template.Patient_data(id=id, name=name, sex=sex, body_part=body_part)
+
+    enter_patient(patient_params['Patient ID'],
+                  patient_params['Patient Name'],
+                  patient_params['Patient Sex'],
+                  patient_params['Body part examined'])
+
+
+
+patient_scans = reader.load_scan(patient_path)
+imgs = reader.get_pixels_hu(patient_scans)
 
 np.save(output_path + "fullimages_%d.npy" % (id), imgs)
 
 file_used = output_path + "fullimages_%d.npy" % id
-imgs_to_process = np.load(file_used).astype(np.float64)
 
-plt.hist(imgs_to_process.flatten(), bins=50, color='c')
-plt.xlabel("Hounsfield Units (HU)")
-plt.ylabel("Frequency")
-plt.show()
 
 
 id = 0
 imgs_to_process = np.load(output_path+'fullimages_{}.npy'.format(id))
+print(len(imgs_to_process))
 
-def sample_stack(stack, rows=9, cols=9, start_with=0, show_every=1):
-    fig, ax = plt.subplots(rows, cols, figsize=[20,20])
-    plt.subplots_adjust(hspace=0.43)
-    for i in range(rows*cols):
-        ind = start_with + i*show_every
-        ax[int(i/rows),int(i % rows)].set_title('Срез {}'.format(ind), fontsize=7)
-        ax[int(i/rows),int(i % rows)].imshow(stack[ind],cmap='gray')
-        ax[int(i/rows),int(i % rows)].axis('off')
-    plt.show()
 
-sample_stack(imgs_to_process)
-image3 = imgs_to_process[25]
+if messagebox.askyesno('Save images', 'Slices loaded!\nSave slices as images?'):
+    i = 0
+    try:
+        os.mkdir(patient_path + '/imgs/')
+    except FileExistsError:
+        pass
+    for image in imgs_to_process:
+        i += 1
+        plt.imshow(image, cmap='gray', interpolation='bilinear')
+        plt.savefig(patient_path + '/imgs/image_{}.jpg'.format(i), bbox_inches=None)
+
+
+
+#sample_stack(imgs_to_process)
+answer = simpledialog.askinteger('Input', 'Choose slice:', parent=sample_stack(imgs_to_process))
+image3 = imgs_to_process[answer]
 #image3[np.logical_and(image3 >= -400, image3 < 300)] = -1000
 #plt.imshow(image3, cmap='gray', interpolation='bilinear')
 #
@@ -119,16 +134,26 @@ plt.show()
 
 
 el = scipy.ndimage.grey_dilation(image3, size=(3, 3))
+
 plt.imshow(el, cmap='gray', interpolation='bilinear')
 plt.show()
 
-"""
+
+
+med = scipy.ndimage.median_filter(image3, 7)
+plt.imshow(med, cmap='gray', interpolation='bilinear')
+plt.show()
+
+
+
+
+image3 = med
+plt.imshow(image3, cmap='gray', interpolation='bilinear')
 plt.contour(image3, [-1500, -800], colors='brown', linestyles='solid')#air
 plt.contour(image3, [-550, -450], colors='blue', linestyles='solid')#lungs
 plt.contour(image3, [250, 3000], colors='cyan', linestyles='solid')#bones
-plt.contour(image3, [-120, -90], colors='yellow', linestyles='solid')#fat
-plt.contour(image3, [10, 40], colors='red', linestyles='solid')#muscles
-plt.legend(['something'])
+plt.contour(image3, [-170, -45], colors='yellow', linestyles='solid')#fat
+plt.contour(image3, [10, 105], colors='red', linestyles='solid')#muscles
+plt.axis('off')
+plt.savefig('contoured.jpg', bbox_inches=None)
 plt.show()
-
-"""
