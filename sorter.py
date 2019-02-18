@@ -5,42 +5,40 @@ from abc import ABCMeta, abstractmethod
 from shutil import copyfile
 import re
 
-data_path = "/home/alex/PyDicom/DICOM"
-g = glob(data_path + '/*.dcm')
 
-class Sorting(metaclass=ABCMeta):
+
+class Sorter(metaclass=ABCMeta):
     @abstractmethod
-    def sort(self):
+    def sort(self, path):
         pass
 
 
-class SortingByID(Sorting):
+class SorterByID(Sorter):
 
-    def sort(self):
+    def sort(self, path):
+        g = glob(path + '/*.dcm')
         for file in g:
             id = pydicom.dcmread(file).PatientID
             instance = pydicom.dcmread(file).InstanceNumber
             try:
-                os.makedirs(data_path + '/{}'.format(id))
+                os.makedirs(path + '/{}'.format(id))
             except:
                 pass
-            copyfile(file, data_path+'/{}/{}.dcm'.format(id, instance))
+            copyfile(file, path+'/{}/{}.dcm'.format(id, instance))
 
-class SortingByName(Sorting):
+class SorterByName(Sorter):
 
-    def sort(self):
+    def sort(self, path):
+        g = glob(path + '/*.dcm')
         for file in g:
             name = str(pydicom.dcmread(file).PatientName)
             name = re.sub(r'[-/\d\']', '', name)
             name = name.strip()
             instance = pydicom.dcmread(file).InstanceNumber
             try:
-                os.makedirs(data_path + '/{}'.format(name))
+                os.makedirs(path + '/{}'.format(name))
             except:
                 pass
-            copyfile(file, data_path+'/{}/{}.dcm'.format(name, instance))
+            copyfile(file, path+'/{}/{}.dcm'.format(name, instance))
 
-
-sort_name = SortingByID()
-sort_name.sort()
 

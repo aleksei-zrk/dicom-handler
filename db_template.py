@@ -6,7 +6,7 @@ from pony.orm import (
 db = Database()
 
 
-class Patient_data(db.Entity):
+class PatientData(db.Entity):
 
     id = PrimaryKey(str, 15)
     name = Required(str, 50)
