@@ -5,6 +5,7 @@ import math
 import matplotlib.pyplot as plt
 from abc import ABCMeta, abstractmethod
 
+
 class ScanReader(object):
 
     def load_scan(self, path):
@@ -45,6 +46,7 @@ class ScanReader(object):
 
         return np.array(image, dtype=np.int16)
 
+
 def sample_stack(stack, rows=None, cols=None, start_with=0, show_every=1):
     if round(math.sqrt(len(stack))) ** 2 >= len(stack):
         rows = cols = int(math.sqrt(len(stack)))
@@ -52,7 +54,6 @@ def sample_stack(stack, rows=None, cols=None, start_with=0, show_every=1):
         rows = round(math.sqrt(len(stack)))
         cols = rows + 1
 
-    print(rows, cols)
     fig, ax = plt.subplots(rows, cols, figsize=[20,20])
     plt.subplots_adjust(top=0.965, bottom=0, left=0, right=1, hspace=0.43)
     plt.title('Choose slice to handle:')
