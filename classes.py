@@ -29,7 +29,6 @@ class Patient(object):
         else:
             return 'Male'
 
-
     def get_body_part(self):
         return self.body_part
 

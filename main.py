@@ -6,7 +6,6 @@ from glob import glob
 
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.ndimage
 import tkinter as tk
 from tkinter import simpledialog, messagebox
 from tkinter.filedialog import askdirectory
@@ -14,11 +13,14 @@ from terminaltables import AsciiTable
 
 import db_template
 from sorter import SorterByID, SorterByName
-from handler import ScanReader, sample_stack
+from handler import ScanReader, sample_stack, ContourerNeck, ContourerChest, ContourerPelvis
 from classes import Patient
 
-output_path = working_path = '/home/{}/Documents/'.format(getpass.getuser())
 
+class BodyPartError(Exception):
+    pass
+
+output_path = working_path = '/home/{}/Documents/'.format(getpass.getuser())
 
 def format_dict(d):
     d = json.dumps(d, indent=0, ensure_ascii=False)
@@ -122,24 +124,22 @@ def patient_load():
 
             db_template.PatientData(id=id, name=name, sex=sex, birthday=birthday, body_part=body_part)
 
-        try:
-            enter_patient(patient_params['Patient ID'],
-                          patient_params['Patient Name'],
-                          patient_params['Patient Sex'],
-                          patient_params['Birth Date'],
-                          patient_params['Body part examined'])
-        except:
-            messagebox.showinfo('Info', 'Patient already in the database')
-            return
+        enter_patient(patient_params['Patient ID'],
+                      patient_params['Patient Name'],
+                      patient_params['Patient Sex'],
+                      patient_params['Birth Date'],
+                      patient_params['Body part examined'])
+
 
     patient_scans = reader.load_scan(patient_path)
     imgs = reader.get_pixels_hu(patient_scans)
 
     id = patient_params['Patient ID']
     name = patient_params['Patient Name']
-    np.save(output_path + "fullimages_{}({}).npy".format(id, name), imgs)
+    body_part = patient_params['Body part examined']
+    np.save(output_path + "fullimages_{}({}, {}).npy".format(id, name, body_part), imgs)
 
-    imgs = np.load(output_path + 'fullimages_{}({}).npy'.format(id, name))
+    imgs = np.load(output_path + 'fullimages_{}({}, {}).npy'.format(id, name, body_part))
 
     if messagebox.askyesno('Save images', 'Slices loaded!\nSave slices as images?'):
         i = 0
@@ -159,64 +159,66 @@ def process():
     files = [os.path.basename(i) for i in glob(output_path + 'fullimages_*.npy')]
     files = [re.sub(r'[fullimages_]', '', i) for i in files]
     files = [file.strip('.npy') for file in files]
-
+    print(files)
     file_popup = tk.Toplevel()
     file_popup.title('Choose file')
     def file_choose(file):
         global chosen_file
         chosen_file = file
+        print(file)
         file_popup.quit()
     for file in files:
+        print(file)
         tk.Button(master=file_popup,
                   text='{}'.format(file),
-                  command=lambda: file_choose(file),
+                  command=lambda file=file: file_choose(file),
                   width=30,
                   height=3,
-                  font='Arial, 10').pack()
+                  font='Arial, 11').pack()
     file_popup.mainloop()
 
+
+    body_part = re.search(r'NECK', chosen_file) or re.search(r'CHEST', chosen_file) or re.search(r'PELVIS', chosen_file)
+    body_part = body_part.group(0)
+    print(body_part)
     imgs_to_process = np.load(output_path + 'fullimages_{}.npy'.format(chosen_file))
     slice = simpledialog.askinteger('Input', 'Choose slice:', parent=sample_stack(imgs_to_process))
     image3 = imgs_to_process[slice]
-    # image3[np.logical_and(image3 >= -400, image3 < 300)] = -1000
-    # plt.imshow(image3, cmap='gray', interpolation='bilinear')
-    #
+
     plt.imshow(image3, cmap='gray', interpolation='bilinear')
     plt.show()
+    if body_part == 'NECK':
+        contourer = ContourerNeck()
+    elif body_part == 'CHEST':
+        contourer = ContourerChest()
+    elif body_part == 'PELVIS':
+        contourer = ContourerPelvis()
+    else:
+        raise BodyPartError('This localization is not supported!')
 
-    # sample_stack(imgs_to_process)
 
-    el = scipy.ndimage.grey_dilation(image3, size=(3, 3))
+    contourer.contour(image3, save=False)
 
-    plt.imshow(el, cmap='gray', interpolation='bilinear')
-    plt.show()
-
-    med = scipy.ndimage.median_filter(image3, 7)
-    plt.imshow(med, cmap='gray', interpolation='bilinear')
-    plt.show()
-
-    image3 = med
-    plt.imshow(image3, cmap='gray', interpolation='bilinear')
-    plt.contour(image3, [-1500, -800], colors='brown', linestyles='solid')  # air
-    plt.contour(image3, [-550, -450], colors='blue', linestyles='solid')  # lungs
-    plt.contour(image3, [250, 3000], colors='cyan', linestyles='solid')  # bones
-    plt.contour(image3, [-170, -45], colors='yellow', linestyles='solid')  # fat
-    plt.contour(image3, [10, 105], colors='red', linestyles='solid')  # muscles
-    plt.axis('off')
-    plt.savefig('contoured.jpg', bbox_inches=None)
-    plt.show()
+    answer = messagebox.askyesno('Save files', 'Save contoured images?')
+    if answer:
+        path = output_path + '/{}'.format(chosen_file)
+        id = 0
+        try:
+            os.makedirs(path)
+        except:
+            pass
+        for image in imgs_to_process:
+            id += 1
+            contourer.contour(image, path=path, save=True, id=id)
 
 
 root = tk.Tk()
 
 root.title('Menu')
 
-tk.Button(text='Show Patient database', command=lambda: show_database(), font='Arial, 10').pack()
-tk.Button(text='Reallocate and sort DICOM', command=lambda: sort(), font='Arial, 10').pack()
-tk.Button(text='Load patient', command=lambda: patient_load(), font='Arial, 10').pack()
-tk.Button(text='Process images', command=lambda: process(), font='Arial, 10').pack()
-tk.Button(text='Quit', command=lambda: exit(), font='Arial, 10').pack()
+tk.Button(text='Show Patient database', command=lambda: show_database(), font='Arial, 11', height=2).pack()
+tk.Button(text='Reallocate and sort DICOM', command=lambda: sort(), font='Arial, 11', height=2).pack()
+tk.Button(text='Load patient', command=lambda: patient_load(), font='Arial, 11', height=2).pack()
+tk.Button(text='Process images', command=lambda: process(), font='Arial, 11', height=2).pack()
+tk.Button(text='Quit', command=lambda: exit(), font='Arial, 11', height=2).pack()
 root.mainloop()
-
-
-
