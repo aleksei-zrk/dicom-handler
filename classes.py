@@ -1,7 +1,9 @@
-from glob import glob
-import pydicom
 import re
 from datetime import datetime
+from glob import glob
+
+import pydicom
+
 
 class Patient(object):
     def __init__(self, path):

@@ -6,6 +6,9 @@ import pydicom
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.ndimage
+from plotly import figure_factory as FF
+from skimage import measure
+from plotly.offline import plot, init_notebook_mode
 
 
 class ScanReader(object):
@@ -15,11 +18,11 @@ class ScanReader(object):
         slices = [pydicom.dcmread(path + '/' + s)
                   for s in sorted(os.listdir(path)) if os.path.isfile(os.path.join(path, s))]
         slices.sort(key=lambda x: int(x.InstanceNumber))
+
         try:
             slice_thickness = np.abs(slices[0].ImagePositionPatient[2] - slices[1].ImagePositionPatient[2])
         except:
             slice_thickness = np.abs(slices[0].SliceLocation - slices[1].SliceLocation)
-
         for s in slices:
             s.SliceThickness = slice_thickness
 
@@ -146,11 +149,6 @@ class Plot3D(object):
 
         return image, new_spacing
 
-    print("Shape before resampling\t", imgs_to_process.shape)
-    imgs_after_resamp, spacing = resample(imgs_to_process, patient, [1, 1, 1])
-    print("Shape after resampling\t", imgs_after_resamp.shape)
-
-
     def make_mesh(self, image, threshold=-300, step_size=1):
         print("Transposing surface")
         p = image.transpose(2, 1, 0)
@@ -159,14 +157,12 @@ class Plot3D(object):
         verts, faces, norm, val = measure.marching_cubes_lewiner(p, threshold, step_size=step_size, allow_degenerate=True)
         return verts, faces
 
-
-    def plotly_3d(self, verts, faces):
+    def plotly_3d(self, verts, faces, path, filename):
+        init_notebook_mode(connected=True)
         x, y, z = zip(*verts)
 
         print("Drawing")
 
-        # Make the colormap single color since the axes are positional not intensity.
-        #    colormap=['rgb(255,105,180)','rgb(255,255,51)','rgb(0,191,255)']
         colormap = ['rgb(236, 236, 212)', 'rgb(236, 236, 212)']
 
         fig = FF.create_trisurf(x=x,
@@ -177,26 +173,5 @@ class Plot3D(object):
                                 simplices=faces,
                                 backgroundcolor='rgb(64, 64, 64)',
                                 title="Interactive Visualization")
-        iplot(fig)
-
-
-    def plt_3d(self, verts, faces):
-        print("Drawing")
-        x, y, z = zip(*verts)
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(111, projection='3d')
-
-        # Fancy indexing: `verts[faces]` to generate a collection of triangles
-        mesh = Poly3DCollection(verts[faces], linewidths=0.05, alpha=1)
-        face_color = [0.7, 0.7, 0.7]
-        mesh.set_facecolor(face_color)
-        ax.add_collection3d(mesh)
-
-        ax.set_xlim(0, max(x))
-        ax.set_ylim(0, max(y))
-        ax.set_zlim(0, max(z))
-        ax.set_facecolor((1, 1, 1))
-        plt.show()
-
-    v, f = make_mesh(imgs_after_resamp, 350)
-    plt_3d(v, f)
+        print(fig)
+        plot(fig, filename=path + '/3D_' + filename +'.html')

@@ -1,10 +1,10 @@
-import pydicom
 import os
 from glob import glob
 from abc import ABCMeta, abstractmethod
 from shutil import copyfile
 import re
 
+import pydicom
 
 
 class Sorter(metaclass=ABCMeta):
@@ -18,6 +18,10 @@ class SorterByID(Sorter):
     def sort(self, path):
         g = glob(path + '/*.dcm')
         for file in g:
+            try:
+                pydicom.dcmread(file).SliceLocation
+            except AttributeError:
+                continue
             id = pydicom.dcmread(file).PatientID
             instance = pydicom.dcmread(file).InstanceNumber
             try:
@@ -26,11 +30,16 @@ class SorterByID(Sorter):
                 pass
             copyfile(file, path+'/{}/{}.dcm'.format(id, instance))
 
+
 class SorterByName(Sorter):
 
     def sort(self, path):
         g = glob(path + '/*.dcm')
         for file in g:
+            try:
+                pydicom.dcmread(file).SliceLocation
+            except AttributeError:
+                continue
             name = str(pydicom.dcmread(file).PatientName)
             name = re.sub(r'[-/\d\']', '', name)
             name = name.strip()
