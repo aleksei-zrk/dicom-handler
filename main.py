@@ -13,6 +13,7 @@ from tkinter import simpledialog, messagebox, ttk
 from tkinter.filedialog import askdirectory
 from terminaltables import AsciiTable
 from pony.orm import commit
+from pony.orm.core import ObjectNotFound
 
 import db_template
 from sorter import SorterByID, SorterByName
@@ -40,11 +41,19 @@ def show_database():
         root.destroy()
 
     def delete():
+
         id = simpledialog.askstring('Choose patient', 'Choose patient ID to delete:')
-        db_template.PatientData[id].delete()
-        commit()
-        root.after(close(), 500)
-        show_database()
+        try:
+            db_template.PatientData[id].delete()
+            commit()
+            root.quit()
+            root.destroy()
+            show_database()
+        except ValueError:
+            pass
+        except ObjectNotFound:
+            messagebox.showinfo('Info', 'No such patient')
+
     try:
         db_template.db.bind(provider='sqlite', filename='patients.sqlite', create_db=True)
         db_template.db.generate_mapping(check_tables=True)
@@ -105,10 +114,11 @@ def sort():
 def patient_load():
     reader = ScanReader()
 
-    patient_path = askdirectory()
+
     try:
+        patient_path = askdirectory()
         patient = Patient(patient_path)
-    except IndexError:
+    except (IndexError, TypeError):
         return
     patient_params = {'Patient ID': patient.get_id(),
                       'Patient Name': patient.get_name(),
@@ -179,17 +189,15 @@ def process():
     files = [os.path.basename(i) for i in glob(output_path + 'fullimages_*.npy')]
     files = [re.sub(r'[fullimages_]', '', i) for i in files]
     files = [file.strip('.npy') for file in files]
-    print(files)
     file_popup = tk.Toplevel()
     file_popup.title('Choose file')
+
     def file_choose(file):
         global chosen_file
         chosen_file = file
-        print(file)
         file_popup.quit()
         file_popup.destroy()
     for file in files:
-        print(file)
         tk.Button(master=file_popup,
                   text='{}'.format(file),
                   command=lambda file=file: file_choose(file),
@@ -201,7 +209,6 @@ def process():
 
     body_part = re.search(r'NECK', chosen_file) or re.search(r'CHEST', chosen_file) or re.search(r'PELVIS', chosen_file)
     body_part = body_part.group(0)
-    print(body_part)
     imgs_to_process = np.load(output_path + 'fullimages_{}.npy'.format(chosen_file))
 
     plt.hist(imgs_to_process.flatten(), bins=15, color='green')
@@ -222,7 +229,6 @@ def process():
         contourer = ContourerPelvis()
     else:
         raise BodyPartError('This localization is not supported!')
-
 
     contourer.contour(image, save=False)
 
@@ -262,11 +268,9 @@ def make_3d():
     def file_choose(file):
         global chosen_file
         chosen_file = file
-        print(file)
         file_popup.quit()
         file_popup.destroy()
     for file in files:
-        print(file)
         tk.Button(master=file_popup,
                   text='{}'.format(file),
                   command=lambda file=file: file_choose(file),

@@ -26,7 +26,7 @@ class SorterByID(Sorter):
             instance = pydicom.dcmread(file).InstanceNumber
             try:
                 os.makedirs(path + '/{}'.format(id))
-            except:
+            except FileExistsError:
                 pass
             copyfile(file, path+'/{}/{}.dcm'.format(id, instance))
 
@@ -46,7 +46,7 @@ class SorterByName(Sorter):
             instance = pydicom.dcmread(file).InstanceNumber
             try:
                 os.makedirs(path + '/{}'.format(name))
-            except:
+            except FileExistsError:
                 pass
             copyfile(file, path+'/{}/{}.dcm'.format(name, instance))
 
