@@ -13,6 +13,7 @@ class Patient(object):
         self.birthday = self.file.PatientBirthDate
         self.sex = self.file.PatientSex
         self.body_part = self.file.BodyPartExamined
+        self.study_date = self.file.StudyDate
 
     def get_name(self):
         name = re.sub(r'[-/\d\']', '', str(self.name))
@@ -24,6 +25,9 @@ class Patient(object):
 
     def get_birth_date(self):
         return str(datetime.strptime(self.birthday, '%Y%m%d').date())
+
+    def get_study_date(self):
+        return str(datetime.strptime(self.study_date, '%Y%m%d').date())
 
     def get_sex(self):
         if str(self.sex) == 'F':

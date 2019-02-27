@@ -1,6 +1,5 @@
 from pony.orm import (
-    Database,
-    Required, Optional, PrimaryKey, Set, set_sql_debug, db_session
+    Database, Required, PrimaryKey, db_session
 )
 
 db = Database()
@@ -13,6 +12,7 @@ class PatientData(db.Entity):
     sex = Required(str, 10)
     birthday = Required(str, 20)
     body_part = Required(str, 10)
+    study_date = Required(str, 20)
 
 
 

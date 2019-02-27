@@ -44,18 +44,17 @@ class ScanReader(object):
             image = image.astype(np.int16)
 
         image += np.int16(intercept)
-        # image[np.logical_and(image >= -400, image < 400)] = -1000
 
         return np.array(image, dtype=np.int16)
 
 
-def sample_stack(stack, rows=None, cols=None, start_with=0, show_every=1):
+def sample_stack(stack, start_with=0, show_every=1):
     if round(math.sqrt(len(stack))) ** 2 >= len(stack):
         rows = cols = int(math.sqrt(len(stack)))
     else:
         rows = round(math.sqrt(len(stack)))
         cols = rows
-
+    # Creates table of subplots with slices
     fig, ax = plt.subplots(rows, cols, figsize=[20,20])
     plt.subplots_adjust(top=0.965, bottom=0, left=0, right=1, hspace=0.43)
     plt.title('Choose slice to handle:')
@@ -78,7 +77,7 @@ class Contourer(metaclass=ABCMeta):
 class ContourerNeck(Contourer):
 
     def contour(self, image, path=None, save=True, id=0):
-        image = scipy.ndimage.median_filter(image, 3)
+        image = scipy.ndimage.median_filter(image, 4)
         plt.imshow(image, cmap='gray')
         plt.contour(image, [-1500, -800], colors='blue', linestyles='solid')  # air
         plt.contour(image, [-550, -450], colors='brown', linestyles='solid') # lungs
@@ -115,7 +114,7 @@ class ContourerChest(Contourer):
 class ContourerPelvis(Contourer):
 
     def contour(self, image, path=None, save=True, id=0):
-        image = scipy.ndimage.median_filter(image, 3)
+        image = scipy.ndimage.median_filter(image, 5)
         plt.imshow(image, cmap='gray')
         plt.contour(image, [-1500, -800], colors='blue', linestyles='solid')  # air
         plt.contour(image, [250, 3000], colors='cyan', linestyles='solid')  # bones
@@ -151,7 +150,7 @@ class Plot3D(object):
         return image, new_spacing
 
     def make_mesh(self, image, threshold=-300, step_size=1):
-
+        # Creates surface
         p = image.transpose(2, 1, 0)
 
         verts, faces, norm, val = measure.marching_cubes_lewiner(p, threshold, step_size=step_size, allow_degenerate=True)

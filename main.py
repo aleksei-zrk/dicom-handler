@@ -55,10 +55,11 @@ def show_database():
             messagebox.showinfo('Info', 'No such patient')
 
     try:
-        db_template.db.bind(provider='sqlite', filename='patients.sqlite', create_db=True)
+        db_template.db.bind(provider='sqlite', filename='patients.sqlite', create_db=False)
         db_template.db.generate_mapping(check_tables=True)
     except:
         pass
+
     try:
         data = db_template.db.select('select * from PatientData')
     except:
@@ -67,12 +68,13 @@ def show_database():
         tk.Label(master=popup, text='There is no database!', font='Arial, 10').pack()
         tk.Button(master=popup, text='OK', command=lambda: popup.destroy()).pack()
         return
-    data = [('ID', 'Name', 'Sex', 'Birth Date', 'Body part')] + data
+
+    data = [('ID', 'Name', 'Sex', 'Birth Date', 'Body part', 'Study Date')] + data
     table = AsciiTable(data, title='Patient database')
     root = tk.Toplevel()
     root.configure(bg='white')
     root.title('Patient Database')
-    tk.Label(root, text=table.table, background='white').pack()
+    tk.Label(root, text=table.table, background='white', font='Arial, 11').pack()
     tk.Button(root, text='OK', command=lambda: close(), bg='white').pack()
     tk.Button(root, text='Delete ', command=lambda: delete(), bg='white').pack()
     root.mainloop()
@@ -124,7 +126,9 @@ def patient_load():
                       'Patient Name': patient.get_name(),
                       'Patient Sex': patient.get_sex(),
                       'Birth Date': patient.get_birth_date(),
-                      'Body part examined': patient.get_body_part()}
+                      'Body part examined': patient.get_body_part(),
+                      'Study Date': patient.get_study_date()
+                      }
 
     root = tk.Tk()
 
@@ -139,13 +143,14 @@ def patient_load():
         try:
             db_template.db.bind(provider='sqlite', filename='patients.sqlite', create_db=True)
             db_template.db.generate_mapping(create_tables=True)
+            commit()
         except:
             pass
 
         @db_template.db_session
-        def enter_patient(id, name, sex, birthday, body_part):
+        def enter_patient(id, name, sex, birthday, body_part, study_date):
 
-            db_template.PatientData(id=id, name=name, sex=sex, birthday=birthday, body_part=body_part)
+            db_template.PatientData(id=id, name=name, sex=sex, birthday=birthday, body_part=body_part, study_date=study_date)
             commit()
 
         try:
@@ -153,10 +158,12 @@ def patient_load():
                           patient_params['Patient Name'],
                           patient_params['Patient Sex'],
                           patient_params['Birth Date'],
-                          patient_params['Body part examined'])
+                          patient_params['Body part examined'],
+                          patient_params['Study Date']
+                          )
         except:
             messagebox.showinfo('Info', 'Patient already in the database!')
-            pass
+            return
 
 
 
@@ -182,6 +189,7 @@ def patient_load():
             plt.savefig(patient_path + '/imgs/image_{}.jpg'.format(i), bbox_inches=None)
             plt.clf()
 
+
 def process():
     if not glob(output_path + 'fullimages_*.npy'):
         messagebox.showinfo('Info', 'There are no patient files!')
@@ -202,8 +210,8 @@ def process():
                   text='{}'.format(file),
                   command=lambda file=file: file_choose(file),
                   width=30,
-                  height=3,
-                  font='Arial, 11').pack()
+                  height=2,
+                  font='Arial, 10').pack()
     file_popup.mainloop()
 
 
@@ -216,8 +224,14 @@ def process():
     plt.ylabel("Frequency")
     plt.show()
 
-    slice = simpledialog.askinteger('Input', 'Choose slice:', parent=sample_stack(imgs_to_process))
-    image = imgs_to_process[slice]
+    while True:
+        try:
+            slice = simpledialog.askinteger('Input', 'Choose slice:', parent=sample_stack(imgs_to_process))
+            image = imgs_to_process[slice]
+        except IndexError:
+            messagebox.showinfo('Info', 'Wrong number!')
+            continue
+        break
 
     plt.imshow(image, cmap='gray', interpolation='bilinear')
     plt.show()
@@ -275,8 +289,8 @@ def make_3d():
                   text='{}'.format(file),
                   command=lambda file=file: file_choose(file),
                   width=30,
-                  height=3,
-                  font='Arial, 11').pack()
+                  height=2,
+                  font='Arial, 10').pack()
     file_popup.mainloop()
 
     # Have to choose dir with DICOM files of chosen patient
@@ -293,8 +307,8 @@ def make_3d():
     v, f = plot3d_maker.make_mesh(imgs_after_resamp, 350, 2)
     plot3d_maker.plotly_3d(v, f, output_path, chosen_file)
 
-root = tk.Tk()
 
+root = tk.Tk()
 root.title('Menu')
 
 tk.Button(text='Show Patient database', command=lambda: show_database(), font='Arial, 11', height=2).pack()
