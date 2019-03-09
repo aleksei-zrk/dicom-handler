@@ -61,7 +61,7 @@ def sample_stack(stack, start_with=0, show_every=1):
 
     for i in range(rows*cols):
         ind = start_with + i*show_every
-        ax[int(i/rows),int(i % rows)].set_title('Срез {}'.format(ind), fontsize=7)
+        ax[int(i/rows),int(i % rows)].set_title('Slice {}'.format(ind), fontsize=7)
         ax[int(i/rows),int(i % rows)].imshow(stack[ind],cmap='gray')
         ax[int(i/rows),int(i % rows)].axis('off')
     plt.show()
