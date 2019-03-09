@@ -6,4 +6,4 @@ Next, such operations may be performed:
   - add a patient to the SQLite database
   - save slices of scans as images
   - apply simple contours to the structures
-  - create a 3D reconstruction of the scans
+  - create a 3D reconstruction of the scans (Requires IPython)
