@@ -76,7 +76,7 @@ class Contourer(metaclass=ABCMeta):
 
 class ContourerNeck(Contourer):
 
-    def contour(self, image, path=None, save=True, id=0):
+    def contour(self, image, path=None, save=True, id=0, format='jpg'):
         image = scipy.ndimage.median_filter(image, 4)
         plt.imshow(image, cmap='gray')
         plt.contour(image, [-1500, -800], colors='blue', linestyles='solid')  # air
@@ -86,7 +86,7 @@ class ContourerNeck(Contourer):
         plt.contour(image, [10, 105], colors='red', linestyles='solid')  # muscles
 
         if save:
-            plt.savefig(path + '/contoured_{}.jpg'.format(id), bbox_inches=None)
+            plt.savefig(path + '/contoured_{}.{}'.format(id, format), bbox_inches=None)
         else:
             plt.show()
 
@@ -95,7 +95,7 @@ class ContourerNeck(Contourer):
 
 class ContourerChest(Contourer):
 
-    def contour(self, image, path=None, save=True, id=0):
+    def contour(self, image, path=None, save=True, id=0, format='jpg'):
         image = scipy.ndimage.median_filter(image, 3)
         plt.imshow(image, cmap='gray')
         plt.contour(image, [-1500, -800], colors='blue', linestyles='solid')  # air
@@ -105,7 +105,7 @@ class ContourerChest(Contourer):
         plt.contour(image, [10, 105], colors='red', linestyles='solid')  # muscles
 
         if save:
-            plt.savefig(path + '/contoured_{}.jpg'.format(id), bbox_inches=None)
+            plt.savefig(path + '/contoured_{}.{}'.format(id, format), bbox_inches=None)
         else:
             plt.show()
 
@@ -113,7 +113,7 @@ class ContourerChest(Contourer):
 
 class ContourerPelvis(Contourer):
 
-    def contour(self, image, path=None, save=True, id=0):
+    def contour(self, image, path=None, save=True, id=0, format='jpg'):
         image = scipy.ndimage.median_filter(image, 5)
         plt.imshow(image, cmap='gray')
         plt.contour(image, [-1500, -800], colors='blue', linestyles='solid')  # air
@@ -122,7 +122,7 @@ class ContourerPelvis(Contourer):
         plt.contour(image, [10, 105], colors='red', linestyles='solid')  # muscles
 
         if save:
-            plt.savefig(path + '/contoured_{}.jpg'.format(id), bbox_inches=None)
+            plt.savefig(path + '/contoured_{}.{}'.format(id, format), bbox_inches=None)
         else:
             plt.show()
 

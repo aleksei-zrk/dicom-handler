@@ -178,6 +178,19 @@ def patient_load():
     imgs = np.load(output_path + 'fullimages_{}({}, {}).npy'.format(id, name, body_part))
 
     if messagebox.askyesno('Save images', 'Slices loaded!\nSave slices as images?'):
+        def set_extension(frmt):
+            global ext
+            ext=frmt
+            fmt.quit()
+            fmt.destroy()
+
+        fmt = tk.Toplevel()
+        fmt.title('Choose format')
+        tk.Button(master=fmt, text='jpg', command=lambda: set_extension('jpg'), font='Arial, 11').pack()
+        tk.Button(master=fmt, text='png', command=lambda: set_extension('png'), font='Arial, 11').pack()
+        tk.Button(master=fmt, text='tiff', command=lambda: set_extension('tiff'), font='Arial, 11').pack()
+        fmt.mainloop()
+
         i = 0
         try:
             os.mkdir(patient_path + '/imgs/')
@@ -186,7 +199,7 @@ def patient_load():
         for image in imgs:
             i += 1
             plt.imshow(image, cmap='gray', interpolation='bilinear')
-            plt.savefig(patient_path + '/imgs/image_{}.jpg'.format(i), bbox_inches=None)
+            plt.savefig(patient_path + '/imgs/image_{}.{}'.format(i, ext), bbox_inches=None)
             plt.clf()
 
 
@@ -248,6 +261,20 @@ def process():
 
     answer = messagebox.askyesno('Save files', 'Save contoured images?')
     if answer:
+
+        def set_extension(frmt):
+            global ext
+            ext=frmt
+            fmt.quit()
+            fmt.destroy()
+
+        fmt = tk.Toplevel()
+        fmt.title('Choose format')
+        tk.Button(master=fmt, text='jpg', command=lambda: set_extension('jpg'), font='Arial, 11').pack()
+        tk.Button(master=fmt, text='png', command=lambda: set_extension('png'), font='Arial, 11').pack()
+        tk.Button(master=fmt, text='tiff', command=lambda: set_extension('tiff'), font='Arial, 11').pack()
+        fmt.mainloop()
+
         path = output_path + '/{}'.format(chosen_file)
 
         try:
@@ -263,7 +290,7 @@ def process():
             for image in imgs_to_process:
                 id += 1
                 pb['value'] += 1
-                contourer.contour(image, path=path, save=True, id=id)
+                contourer.contour(image, path=path, save=True, id=id, format=ext)
             root.destroy()
         threading.Thread(target=progress).start()
         root.mainloop()
