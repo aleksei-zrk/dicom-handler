@@ -116,7 +116,6 @@ def sort():
 def patient_load():
     reader = ScanReader()
 
-
     try:
         patient_path = askdirectory()
         patient = Patient(patient_path)
@@ -164,8 +163,6 @@ def patient_load():
         except:
             messagebox.showinfo('Info', 'Patient already in the database!')
             return
-
-
 
     patient_scans = reader.load_scan(patient_path)
     imgs = reader.get_pixels_hu(patient_scans)
@@ -226,7 +223,6 @@ def process():
                   height=2,
                   font='Arial, 10').pack()
     file_popup.mainloop()
-
 
     body_part = re.search(r'NECK', chosen_file) or re.search(r'CHEST', chosen_file) or re.search(r'PELVIS', chosen_file)
     body_part = body_part.group(0)
@@ -306,6 +302,7 @@ def make_3d():
 
     file_popup = tk.Toplevel()
     file_popup.title('Choose file')
+
     def file_choose(file):
         global chosen_file
         chosen_file = file

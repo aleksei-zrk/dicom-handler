@@ -111,6 +111,7 @@ class ContourerChest(Contourer):
 
         plt.clf()
 
+
 class ContourerPelvis(Contourer):
 
     def contour(self, image, path=None, save=True, id=0, format='jpg'):
