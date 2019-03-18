@@ -331,6 +331,44 @@ def make_3d():
     v, f = plot3d_maker.make_mesh(imgs_after_resamp, 350, 2)
     plot3d_maker.plotly_3d(v, f, output_path, chosen_file)
 
+def show_images():
+    if not glob(output_path + 'fullimages_*.npy'):
+        messagebox.showinfo('Info', 'There are no patient files!')
+        return
+    files = [os.path.basename(i) for i in glob(output_path + 'fullimages_*.npy')]
+    files = [re.sub(r'[fullimages_]', '', i) for i in files]
+    files = [file.strip('.npy') for file in files]
+
+    file_popup = tk.Toplevel()
+    file_popup.title('Choose file')
+
+    def file_choose(file):
+        global chosen_file
+        chosen_file = file
+        file_popup.quit()
+        file_popup.destroy()
+    for file in files:
+        tk.Button(master=file_popup,
+                  text='{}'.format(file),
+                  command=lambda file=file: file_choose(file),
+                  width=30,
+                  height=2,
+                  font='Arial, 10').pack()
+    file_popup.mainloop()
+
+    images = np.load(output_path + 'fullimages_{}.npy'.format(chosen_file))
+
+    while True:
+        try:
+            slice = simpledialog.askinteger('Input', 'Choose slice:', parent=sample_stack(images))
+            image = images[slice]
+        except IndexError:
+            messagebox.showinfo('Info', 'Wrong number!')
+            continue
+        break
+
+    plt.imshow(image, cmap='gray', interpolation='bilinear')
+    plt.show()
 
 root = tk.Tk()
 root.title('Menu')
@@ -338,6 +376,7 @@ root.title('Menu')
 tk.Button(text='Show Patient database', command=lambda: show_database(), font='Arial, 11', height=2).pack()
 tk.Button(text='Reallocate and sort DICOM', command=lambda: sort(), font='Arial, 11', height=2).pack()
 tk.Button(text='Load patient', command=lambda: patient_load(), font='Arial, 11', height=2).pack()
+tk.Button(text='Show images', command=lambda: show_images(), font='Arial, 11', height=2).pack()
 tk.Button(text='Process images', command=lambda: process(), font='Arial, 11', height=2).pack()
 tk.Button(text='Make 3D image', command=lambda: make_3d(), font='Arial, 11', height=2).pack()
 tk.Button(text='Quit', command=lambda: sys.exit(), font='Arial, 11', height=2).pack()
