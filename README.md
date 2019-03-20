@@ -13,4 +13,4 @@ Next, such operations may be performed:
 
 ![alt text](https://github.com/aleksei-zrk/dicom-handler/blob/master/screenshots/screenshot_3.jpeg)
 
-![alt text](https://github.com/aleksei-zrk/dicom-handler/blob/master/screenshots/screenshot_4.jpeg)
+![alt text](https://github.com/aleksei-zrk/dicom-handler/blob/master/screenshots/screenshot_4.jpg)
