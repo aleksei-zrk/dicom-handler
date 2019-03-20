@@ -8,3 +8,9 @@ Next, such operations may be performed:
   - save slices of scans as images
   - apply simple contours to the structures (for neck, chest and pelvis localizations)
   - create a 3D reconstruction of the scans (Requires IPython)
+
+![alt text](https://github.com/aleksei-zrk/dicom-handler/blob/master/screenshots/screenshot_2.jpeg)
+
+![alt text](https://github.com/aleksei-zrk/dicom-handler/blob/master/screenshots/screenshot_3.jpeg)
+
+![alt text](https://github.com/aleksei-zrk/dicom-handler/blob/master/screenshots/screenshot_4.jpeg)
