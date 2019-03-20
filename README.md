@@ -6,5 +6,5 @@ Next, such operations may be performed:
   - add a patient to the SQLite database
   - show a stack of slices and then a specific slice
   - save slices of scans as images
-  - apply simple contours to the structures
+  - apply simple contours to the structures (for neck, chest and pelvis localizations)
   - create a 3D reconstruction of the scans (Requires IPython)
