@@ -41,7 +41,6 @@ def show_database():
         root.destroy()
 
     def delete():
-
         id = simpledialog.askstring('Choose patient', 'Choose patient ID to delete:')
         try:
             db_template.PatientData[id].delete()
@@ -175,17 +174,19 @@ def patient_load():
     imgs = np.load(output_path + 'fullimages_{}({}, {}).npy'.format(id, name, body_part))
 
     if messagebox.askyesno('Save images', 'Slices loaded!\nSave slices as images?'):
+        ext = ''
+
         def set_extension(frmt):
             global ext
-            ext=frmt
-            fmt.quit()
-            fmt.destroy()
+            ext = frmt
 
         fmt = tk.Toplevel()
         fmt.title('Choose format')
         tk.Button(master=fmt, text='jpg', command=lambda: set_extension('jpg'), font='Arial, 11').pack()
         tk.Button(master=fmt, text='png', command=lambda: set_extension('png'), font='Arial, 11').pack()
         tk.Button(master=fmt, text='tiff', command=lambda: set_extension('tiff'), font='Arial, 11').pack()
+        fmt.quit()
+        fmt.destroy()
         fmt.mainloop()
 
         i = 0
@@ -257,18 +258,19 @@ def process():
 
     answer = messagebox.askyesno('Save files', 'Save contoured images?')
     if answer:
-
+        ext = ''
         def set_extension(frmt):
             global ext
-            ext=frmt
-            fmt.quit()
-            fmt.destroy()
+            ext = frmt
+
 
         fmt = tk.Toplevel()
         fmt.title('Choose format')
         tk.Button(master=fmt, text='jpg', command=lambda: set_extension('jpg'), font='Arial, 11').pack()
         tk.Button(master=fmt, text='png', command=lambda: set_extension('png'), font='Arial, 11').pack()
         tk.Button(master=fmt, text='tiff', command=lambda: set_extension('tiff'), font='Arial, 11').pack()
+        fmt.quit()
+        fmt.destroy()
         fmt.mainloop()
 
         path = output_path + '/{}'.format(chosen_file)
@@ -281,6 +283,7 @@ def process():
         root.title('Progress')
         pb = ttk.Progressbar(root, mode='determinate')
         pb.pack()
+
         def progress():
             id = 0
             for image in imgs_to_process:
